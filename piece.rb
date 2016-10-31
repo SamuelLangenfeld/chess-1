@@ -15,11 +15,6 @@ module Chess
       super
       @icon = team == :W ? "\u2659" : "\u265F"
       @moved = false
-      if team == :W
-        @moves = []
-      else
-        @moves = []
-      end
     end
   end
 

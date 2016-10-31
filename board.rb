@@ -3,6 +3,8 @@ module Chess
   ROWS = (1..8).to_a.reverse
 
   class Board
+    attr_reader :board
+
     def initialize
       @board = Array.new(8) { Array.new(8) }
       0.upto(7) do |col|
@@ -27,6 +29,72 @@ module Chess
       @board[4][7] = Queen.new(:B)
     end
 
+    def tutorial
+      puts "Welcome to Chess!"
+      puts "Move by entering board locations."
+      puts "For example, move a pawn by entering D2 D4."
+      puts "Checkmate your opponent to win."
+      puts
+    end
+
+    def piece(col, row)
+      return @board[col][row] if @board[col][row].is_a?(Piece)
+      nil
+    end
+
+    def valid_move?(from_col, from_row, to_col, to_row)
+      curr_piece = piece(from_col, from_row)
+      return false if curr_piece.team == piece(to_col, to_row).team
+
+      true
+    end
+
+    def has_straight_los?(from_col, from_row, to_col, to_row)                 
+      if from_col == to_col
+        from_row, to_row = to_row, from_row if from_row > to_row
+        for row in from_row + 1...to_row
+          return false unless piece(from_col, row).nil?
+        end
+      else
+        from_col, to_col = to_col, from_col if from_col > to_col
+        for col in from_col + 1...to_col
+          return false unless piece(col, from_row).nil?
+        end
+      end
+      true
+    end
+
+    def has_diag_los?(from_col, from_row, to_col, to_row)
+      from_col, from_row = to_col, to_row if (from_col > to_col) && (from_row > to_row)
+      if (from_col < to_col) && (from_row < to_row)
+        col = from_col
+        row = from_row
+        until col == to_col && row == to_row
+          col += 1
+          row += 1
+          return false unless piece(col, row).nil?
+        end
+      else
+        from_col, from_row = to_col, to_row if (from_col > to_col) && (from_row < to_row)
+        col = from_col
+        row = from_row
+        until col == to_col && row == to_row
+          col += 1
+          row -= 1
+          return false unless piece(col, row).nil?
+        end
+      end
+      true
+    end
+
+    def move(from_col, from_row, to_col, to_row)
+      @board[to_col][to_row] = piece(from_col, from_row)
+      if piece(to_col, to_row).is_a?(Pawn)
+        piece(to_col, to_row).moved = true
+      end
+      @board[from_col][from_row] = nil
+    end
+
     def draw
       puts
       draw_board_top
@@ -39,11 +107,6 @@ module Chess
       end
       draw_board_bottom
       puts
-    end
-
-    def piece(col, row)
-      return @board[col][row] if @board[col][row].is_a?(Piece)
-      nil
     end
 
     def draw_piece(col, row)
