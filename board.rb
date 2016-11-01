@@ -13,25 +13,25 @@ module Chess
 
     def set_board
       0.upto(7) do |col|
-        @board[col][1] = Pawn.new(:W)
-        @board[col][6] = Pawn.new(:B)
+        set(Pawn.new(:W), col, 1)
+        set(Pawn.new(:B), col, 6)
       end
       [0, 7].each do |col|
-        @board[col][0] = Rook.new(:W)
-        @board[col][7] = Rook.new(:B)
+        set(Rook.new(:W), col, 0)
+        set(Rook.new(:B), col, 7)
       end
       [1, 6].each do |col|
-        @board[col][0] = Knight.new(:W)
-        @board[col][7] = Knight.new(:B)
+        set(Knight.new(:W), col, 0)
+        set(Knight.new(:B), col, 7)
       end
       [2, 5].each do |col|
-        @board[col][0] = Bishop.new(:W)
-        @board[col][7] = Bishop.new(:B)
+        set(Bishop.new(:W), col, 0)
+        set(Bishop.new(:B), col, 7)
       end
-      @board[3][0] = King.new(:W)
-      @board[3][7] = King.new(:B)
-      @board[4][0] = Queen.new(:W)
-      @board[4][7] = Queen.new(:B)
+      set(King.new(:W), 3, 0)
+      set(King.new(:B), 3, 7)
+      set(Queen.new(:W), 4, 0)
+      set(Queen.new(:B), 4, 7)
     end
 
     def play
@@ -45,23 +45,27 @@ module Chess
     def turn
       draw
       loop do
-        begin
-        print (@turn % 2 == 0 ? "White's " : "Black's ")
-        print "move: "
+        curr_team = @turn % 2 == 0 ? :W : :B
+        break if mated?(curr_team)
+        print (curr_team == :W ? "   [WHITE " : "   [BLACK ")
+        print "Move"
+        print " -CHECK- " if scan_for_check(curr_team)
+        print "]: "
         input = gets.chomp.upcase
         abort if ["EXIT", "QUIT"].include?(input)
         move_attempt = parse(input)
         from_coords = translate_from(move_attempt[0])
         to_coords = translate_from(move_attempt[1])
-        if valid_move?(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
-          puts "move is valid"
+        if valid_move?(curr_team, from_coords[0], from_coords[1], to_coords[0], to_coords[1])
           move(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
-          break
+          if scan_for_check(curr_team)
+            move(to_coords[0], to_coords[1], from_coords[0], from_coords[1])
+            puts "   You cannot move there, your king will be in check."
+          else
+            break
+          end
         else
-          puts "Invalid move, try again."
-        end
-        rescue
-          puts "Invalid move, try again."
+          puts "   Invalid move, try again."
         end
       end
       @turn += 1
@@ -76,38 +80,107 @@ module Chess
       puts
     end
 
-    def piece(col, row)
+    def set(piece, col, row)
+      @board[col][row] = piece
+    end
+
+    def get(col, row)
       return @board[col][row] if @board[col][row].is_a?(Piece)
       nil
     end
 
-    def valid_move?(from_col, from_row, to_col, to_row)
-      curr_piece = piece(from_col, from_row)
-      puts "checking if current piece exists"
-      return false if curr_piece.nil?
-      puts "checking which pieces may be moved this turn"
-      return false if @turn.even? && curr_piece.team != :W
-      return false if @turn.odd? && curr_piece.team != :B
-      puts "checking for friendly fire"
-      if piece(to_col, to_row)
-        return false if curr_piece.team == piece(to_col, to_row).team
-      end
-      if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
-        puts "checking pawn special conditions"
-        if curr_piece.team == :W && (to_row - from_row == 1)
-          return true if piece(to_col, to_row)
-        elsif curr_piece.team == :B && (from_row - to_row == 1)
-          return true if piece(to_col, to_row)
+    def mated?(curr_team)
+      if stalemate?(curr_team)
+        @game_over = true
+        if scan_for_check(curr_team)
+          victor = curr_team == :W ? "[WHITE]" : "[BLACK]"
+          puts "   Checkmate! #{victor} wins!"
+          return true
+        else
+          puts "   The game has ended in a stalemate."
+          return true
         end
       end
-      puts "checking all possible moves"
+      false
+    end
+
+    def stalemate?(curr_team)
+      0.upto(7) do |from_col|
+        0.upto(7) do |from_row|
+          piece = get(from_col, from_row)
+          if piece.is_a?(Piece) && piece.team == curr_team
+            0.upto(7) do |to_col|
+              0.upto(7) do |to_row|
+                if valid_move?(curr_team, from_col, from_row, to_col, to_row)
+                  stalemate = true
+                  move(from_col, from_row, to_col, to_row)
+                  stalemate = false unless scan_for_check(curr_team)
+                  move(to_col, to_row, from_col, from_row)
+                  return false unless stalemate
+                end
+              end
+            end
+          end
+        end
+      end
+      true
+    end
+
+    def scan_for_check(curr_team)
+      enemy = curr_team == :W ? :B : :W
+      enemy_moves = []
+      king_loc = []
+      0.upto(7) do |from_col|
+        0.upto(7) do |from_row|
+          piece = get(from_col, from_row)
+          unless piece.nil?
+            if piece.team == enemy
+              0.upto(7) do |to_col|
+                0.upto(7) do |to_row|
+                  if valid_move?(enemy, from_col, from_row, to_col, to_row)
+                    enemy_moves << [to_col, to_row] unless enemy_moves.include?([to_col, to_row])
+                  end
+                end
+              end
+            end
+            if piece.is_a?(King) && piece.team == curr_team
+              king_loc = [from_col, from_row]
+            end
+          end
+        end
+      end
+      return true if enemy_moves.include?(king_loc)
+      false
+    end
+
+    def valid_move?(curr_team, from_col, from_row, to_col, to_row)
+      curr_piece = get(from_col, from_row)
+      #puts "checking if current piece exists"
+      return false if curr_piece.nil?
+      #puts "checking which pieces may be moved this turn"
+      return false unless curr_team == curr_piece.team
+      #puts "checking for friendly fire"
+      if get(to_col, to_row)
+        return false if curr_piece.team == get(to_col, to_row).team
+      end
+      if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
+        #puts "checking pawn attack conditions"
+        if curr_team == :W && (to_row - from_row == 1)
+          return true if get(to_col, to_row)
+        elsif curr_team == :B && (from_row - to_row == 1)
+          return true if get(to_col, to_row)
+        end
+      end
+      #puts "checking all possible moves"
       return false unless curr_piece.poss_moves(from_col, from_row).include?([to_col, to_row])
-      case curr_piece.class
-      when Rook
+      if curr_piece.is_a?(Rook)
+        #puts "checking for los"
         return false unless has_straight_los?(from_col, from_row, to_col, to_row)
-      when Bishop
+      elsif curr_piece.is_a?(Bishop)
+        #puts "checking for los"
         return false unless has_diag_los?(from_col, from_row, to_col, to_row)
-      when Queen
+      elsif curr_piece.is_a?(Queen)
+        #puts "checking for los"
         if (from_col == to_col) || (from_row == to_row)
           return false unless has_straight_los?(from_col, from_row, to_col, to_row)
         else
@@ -121,12 +194,12 @@ module Chess
       if from_col == to_col
         from_row, to_row = to_row, from_row if from_row > to_row
         for row in from_row + 1...to_row
-          return false unless piece(from_col, row).nil?
+          return false unless get(from_col, row).nil?
         end
       else
         from_col, to_col = to_col, from_col if from_col > to_col
         for col in from_col + 1...to_col
-          return false unless piece(col, from_row).nil?
+          return false unless get(col, from_row).nil?
         end
       end
       true
@@ -140,10 +213,10 @@ module Chess
       if (from_col < to_col) && (from_row < to_row)
         col = from_col
         row = from_row
-        until col == to_col && row == to_row
+        until col == to_col - 1 && row == to_row - 1
           col += 1
           row += 1
-          return false unless piece(col, row).nil?
+          return false unless get(col, row).nil?
         end
       else
         if (from_col > to_col) && (from_row < to_row)
@@ -152,19 +225,51 @@ module Chess
         end
         col = from_col
         row = from_row
-        until col == to_col && row == to_row
+        until col == to_col - 1 && row == to_row + 1
           col += 1
           row -= 1
-          return false unless piece(col, row).nil?
+          return false unless get(col, row).nil?
         end
       end
       true
     end
 
     def move(from_col, from_row, to_col, to_row)
-      @board[to_col][to_row] = piece(from_col, from_row)
-      piece(to_col, to_row).moved = true if piece(to_col, to_row).is_a?(Pawn)
+      piece = get(from_col, from_row)
+      @board[to_col][to_row] = piece
+      piece.moved = true if (piece.class == Pawn || piece.class == Rook || piece.class == King)
+      if piece.is_a?(Pawn)
+        if piece.team == :W && to_row == 7
+          promote(to_col, to_row)
+        elsif piece.team == :B && to_row == 0
+          promote(to_col, to_row)
+        end
+      end
       @board[from_col][from_row] = nil
+    end
+
+    def promote(col, row)
+      team = get(col, row).team
+      puts "   A pawn has been promoted!"
+      loop do
+        puts "   Select one [BISHOP] [KNIGHT] [ROOK] [QUEEN]: "
+        choice = gets.chomp.upcase
+        if choice.start_with?("Q")
+          @board[col][row] = Queen.new(team)
+          break
+        elsif choice.start_with?("K")
+          @board[col][row] = Knight.new(team)
+          break
+        elsif choice.start_with?("B")
+          @board[col][row] = Bishop.new(team)
+          break
+        elsif choice.start_with?("R")
+          @board[col][row] = Rook.new(team)
+          break
+        else
+          puts "   Invalid choice, try again."
+        end
+      end
     end
 
     def draw
@@ -182,7 +287,7 @@ module Chess
     end
 
     def draw_piece(col, row)
-      return piece(col, row).icon if piece(col, row)
+      return get(col, row).icon if get(col, row)
       return "\u2592" if col.odd? && row.even?
       return "\u2592" if col.even? && row.odd?
       " "

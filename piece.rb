@@ -39,9 +39,12 @@ module Chess
   end
 
   class Rook < Piece
+    attr_accessor :moved
+
     def initialize(team)
       super
       @icon = team == :W ? "\u2656" : "\u265C"
+      @moved = false
     end
 
     def poss_moves(from_col, from_row)
@@ -104,9 +107,12 @@ module Chess
   end
 
   class King < Piece
+    attr_accessor :moved
+    
     def initialize(team)
       super
       @icon = team == :W ? "\u2654" : "\u265A"
+      @moved = false
     end
 
     def poss_moves(from_col, from_row)
