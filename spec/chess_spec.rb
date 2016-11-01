@@ -130,8 +130,8 @@ before(:each) { @game = Board.new }
         end
 
         it "pawns can initially move 2 spaces" do
-          @game.set(Pawn.new(:W), 4, 0)
-          expect(@game.valid_move?(:W, 4, 0, 4, 2)).to be true
+          @game.set(Pawn.new(:W), 0, 1)
+          expect(@game.valid_move?(:W, 0, 1, 0, 3)).to be true
         end
 
         it "pawns cannot move 2 spaces if they have already moved" do

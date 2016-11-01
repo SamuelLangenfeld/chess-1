@@ -96,7 +96,7 @@ module Chess
         to_col -= 1
         to_row -= 1
       end
-      to_col, to_row = from_col + 1, from_row + 1
+      to_col, to_row = from_col - 1, from_row + 1
       until (to_col < 0) || (to_row > 7)
         moves << [to_col, to_row]
         to_col -= 1
@@ -108,7 +108,7 @@ module Chess
 
   class King < Piece
     attr_accessor :moved
-    
+
     def initialize(team)
       super
       @icon = team == :W ? "\u2654" : "\u265A"
@@ -152,7 +152,7 @@ module Chess
         to_col -= 1
         to_row -= 1
       end
-      to_col, to_row = from_col + 1, from_row + 1
+      to_col, to_row = from_col - 1, from_row + 1
       until (to_col < 0) || (to_row > 7)
         moves << [to_col, to_row]
         to_col -= 1

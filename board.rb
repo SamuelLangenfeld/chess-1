@@ -57,11 +57,16 @@ module Chess
         from_coords = translate_from(move_attempt[0])
         to_coords = translate_from(move_attempt[1])
         if valid_move?(curr_team, from_coords[0], from_coords[1], to_coords[0], to_coords[1])
-          move(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+          copy = get(to_coords[0], to_coords[1])
+          test_move(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
           if scan_for_check(curr_team)
-            move(to_coords[0], to_coords[1], from_coords[0], from_coords[1])
+            revert_test(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+            set(copy, to_coords[0], to_coords[1])
             puts "   You cannot move there, your king will be in check."
           else
+            revert_test(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+            set(copy, to_coords[0], to_coords[1])
+            move(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
             break
           end
         else
@@ -85,8 +90,26 @@ module Chess
     end
 
     def get(col, row)
+      return nil if @board[col].nil?
       return @board[col][row] if @board[col][row].is_a?(Piece)
       nil
+    end
+
+    def delete(col, row)
+      return nil if @board[col].nil?
+      @board[col][row] = nil
+    end
+
+    def test_move(from_col, from_row, to_col, to_row)
+      copy = get(from_col, from_row)
+      set(copy, to_col, to_row)
+      delete(from_col, from_row)
+    end
+
+    def revert_test(from_col, from_row, to_col, to_row)
+      copy = get(to_col, to_row)
+      set(copy, from_col, from_row)
+      delete(to_col, to_row)
     end
 
     def mated?(curr_team)
@@ -113,9 +136,11 @@ module Chess
               0.upto(7) do |to_row|
                 if valid_move?(curr_team, from_col, from_row, to_col, to_row)
                   stalemate = true
-                  move(from_col, from_row, to_col, to_row)
+                  copy = get(to_col, to_row)
+                  test_move(from_col, from_row, to_col, to_row)
                   stalemate = false unless scan_for_check(curr_team)
-                  move(to_col, to_row, from_col, from_row)
+                  revert_test(from_col, from_row, to_col, to_row)
+                  set(copy, to_col, to_row)
                   return false unless stalemate
                 end
               end
@@ -155,32 +180,32 @@ module Chess
 
     def valid_move?(curr_team, from_col, from_row, to_col, to_row)
       curr_piece = get(from_col, from_row)
-      #puts "checking if current piece exists"
+      # puts "checking if current piece exists"
       return false if curr_piece.nil?
-      #puts "checking which pieces may be moved this turn"
+      # puts "checking which pieces may be moved this turn"
       return false unless curr_team == curr_piece.team
-      #puts "checking for friendly fire"
+      # puts "checking for friendly fire"
       if get(to_col, to_row)
         return false if curr_piece.team == get(to_col, to_row).team
       end
       if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
-        #puts "checking pawn attack conditions"
+        # puts "checking pawn attack conditions"
         if curr_team == :W && (to_row - from_row == 1)
           return true if get(to_col, to_row)
         elsif curr_team == :B && (from_row - to_row == 1)
           return true if get(to_col, to_row)
         end
       end
-      #puts "checking all possible moves"
+      # puts "checking all possible moves"
       return false unless curr_piece.poss_moves(from_col, from_row).include?([to_col, to_row])
       if curr_piece.is_a?(Rook)
-        #puts "checking for los"
+        # puts "checking for los"
         return false unless has_straight_los?(from_col, from_row, to_col, to_row)
       elsif curr_piece.is_a?(Bishop)
-        #puts "checking for los"
+        # puts "checking for los"
         return false unless has_diag_los?(from_col, from_row, to_col, to_row)
       elsif curr_piece.is_a?(Queen)
-        #puts "checking for los"
+        # puts "checking for los"
         if (from_col == to_col) || (from_row == to_row)
           return false unless has_straight_los?(from_col, from_row, to_col, to_row)
         else
@@ -211,24 +236,24 @@ module Chess
         from_row, to_row = to_row, from_row
       end
       if (from_col < to_col) && (from_row < to_row)
-        col = from_col
-        row = from_row
-        until col == to_col - 1 && row == to_row - 1
+        col = from_col + 1
+        row = from_row + 1
+        until col == to_col && row == to_row
+          return false unless get(col, row).nil?
           col += 1
           row += 1
-          return false unless get(col, row).nil?
         end
       else
         if (from_col > to_col) && (from_row < to_row)
           from_col, to_col = to_col, from_col
           from_row, to_row = to_row, from_row
         end
-        col = from_col
-        row = from_row
-        until col == to_col - 1 && row == to_row + 1
+        col = from_col + 1
+        row = from_row - 1
+        until col == to_col && row == to_row
+          return false unless get(col, row).nil?
           col += 1
           row -= 1
-          return false unless get(col, row).nil?
         end
       end
       true
@@ -236,16 +261,18 @@ module Chess
 
     def move(from_col, from_row, to_col, to_row)
       piece = get(from_col, from_row)
-      @board[to_col][to_row] = piece
-      piece.moved = true if (piece.class == Pawn || piece.class == Rook || piece.class == King)
+      set(piece, to_col, to_row)
       if piece.is_a?(Pawn)
+        piece.moved = true
         if piece.team == :W && to_row == 7
           promote(to_col, to_row)
         elsif piece.team == :B && to_row == 0
           promote(to_col, to_row)
         end
+      elsif (piece.class == Rook || piece.class == King)
+        piece.moved = true
       end
-      @board[from_col][from_row] = nil
+      delete(from_col, from_row)
     end
 
     def promote(col, row)
