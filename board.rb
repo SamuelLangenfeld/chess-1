@@ -133,7 +133,10 @@ module Chess
     end
 
     def has_diag_los?(from_col, from_row, to_col, to_row)
-      from_col, from_row = to_col, to_row if (from_col > to_col) && (from_row > to_row)
+      if (from_col > to_col) && (from_row > to_row)
+        from_col, to_col = to_col, from_col
+        from_row, to_row = to_row, from_row
+      end
       if (from_col < to_col) && (from_row < to_row)
         col = from_col
         row = from_row
@@ -143,7 +146,10 @@ module Chess
           return false unless piece(col, row).nil?
         end
       else
-        from_col, from_row = to_col, to_row if (from_col > to_col) && (from_row < to_row)
+        if (from_col > to_col) && (from_row < to_row)
+          from_col, to_col = to_col, from_col
+          from_row, to_row = to_row, from_row
+        end
         col = from_col
         row = from_row
         until col == to_col && row == to_row

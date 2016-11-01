@@ -45,13 +45,59 @@ describe Chess do
 
     describe "#move" do
       it "moves a piece" do
-        @game.board[0][0] = Queen.new(:B)
+        piece = Queen.new(:B)
+        @game.board[0][0] = piece
         @game.move(0, 0, 0, 1)
         expect(@game.board[0][0]).to be nil
-        expect(@game.board[0][1]).to be_an_instance_of(Queen)
+        expect(@game.board[0][1]).to equal(piece)
       end
     end
 
+    describe "#has_straight_los?" do
+      before(:each) do
+        @game = Board.new
+        @game.board[4][4] = Pawn.new(:W)
+      end
+
+      it "clears horizontal move path, left to right" do
+        expect(@game.has_straight_los?(0, 4, 7, 4)).to be false
+      end
+
+      it "clears horizontal move path, right to left" do
+        expect(@game.has_straight_los?(7, 4, 0, 4)).to be false
+      end
+
+      it "clears vertical move path, top to bottom" do
+        expect(@game.has_straight_los?(4, 7, 4, 0)).to be false
+      end
+
+      it "clears vertical move path, bottom to top" do
+        expect(@game.has_straight_los?(4, 0, 4, 7)).to be false
+      end
+    end
+
+    describe "#has_diag_los?" do
+      before(:each) do
+        @game = Board.new
+        @game.board[4][4] = Pawn.new(:W)
+      end
+
+      it "clears diagonal move path, bottom left to top right" do
+        expect(@game.has_diag_los?(0, 0, 7, 7)).to be false
+      end
+
+      it "clears diagonal move path, bottom right to top left" do
+        expect(@game.has_diag_los?(7, 1, 1, 7)).to be false
+      end
+
+      it "clears diagonal move path, top left to bottom right" do
+        expect(@game.has_diag_los?(1, 7, 7, 1)).to be false
+      end
+
+      it "clears diagonal move path, top right to bottom left" do
+        expect(@game.has_diag_los?(7, 7, 0, 0)).to be false
+      end
+    end
   end
 
   describe Piece do

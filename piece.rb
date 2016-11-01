@@ -1,18 +1,18 @@
 module Chess
 
-  def clean
-    moves = []
-    self.each do |move|
-      moves << move if move[0].between?(0, 7) && move[1].between?(0, 7)
-    end
-    moves
-  end
-
   class Piece
     attr_reader :team, :icon, :col, :row
 
     def initialize(team)
       @team = team
+    end
+
+    def clean(moves)
+      cleaned = []
+      moves.each do |move|
+        cleaned << move if move[0].between?(0, 7) && move[1].between?(0, 7)
+      end
+      cleaned
     end
   end
 
@@ -34,7 +34,7 @@ module Chess
         moves << [from_col, from_row - 1]
         moves << [from_col, from_row - 2] unless @moved
       end
-      moves.clean
+      clean(moves)
     end
   end
 
@@ -48,7 +48,7 @@ module Chess
       moves = []
       0.upto(7) { |to_row| moves << [from_col, to_row] unless to_row == from_row }
       0.upto(7) { |to_col| moves << [to_col, from_row] unless to_col == from_col }
-      moves.clean
+      clean(moves)
     end
   end
 
@@ -63,7 +63,7 @@ module Chess
                [from_col + 2, from_row - 1], [from_col + 1, from_row - 2],
                [from_col - 1, from_row - 2], [from_col - 2, from_row - 1],
                [from_col - 2, from_row + 1], [from_col - 1, from_row + 2]]
-      moves.clean
+      clean(moves)
     end
   end
 
@@ -114,7 +114,7 @@ module Chess
                [from_col + 1, from_row], [from_col + 1, from_row - 1],
                [from_col, from_row - 1], [from_col - 1, from_row - 1],
                [from_col - 1, from_row], [from_col - 1, from_row + 1]]
-      moves.clean
+      clean(moves)
     end
   end
 
@@ -152,7 +152,7 @@ module Chess
         to_col -= 1
         to_row += 1
       end
-      moves
+      clean(moves)
     end
   end
 
