@@ -6,7 +6,12 @@ module Chess
     attr_reader :board
 
     def initialize
+      @turn = 0
+      @game_over = false
       @board = Array.new(8) { Array.new(8) }
+    end
+
+    def set_board
       0.upto(7) do |col|
         @board[col][1] = Pawn.new(:W)
         @board[col][6] = Pawn.new(:B)
@@ -29,11 +34,45 @@ module Chess
       @board[4][7] = Queen.new(:B)
     end
 
+    def play
+      set_board
+      tutorial
+      until @game_over
+        turn
+      end
+    end
+
+    def turn
+      draw
+      loop do
+        begin
+        print (@turn % 2 == 0 ? "White's " : "Black's ")
+        print "move: "
+        input = gets.chomp.upcase
+        abort if ["EXIT", "QUIT"].include?(input)
+        move_attempt = parse(input)
+        from_coords = translate_from(move_attempt[0])
+        to_coords = translate_from(move_attempt[1])
+        if valid_move?(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+          puts "move is valid"
+          move(from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+          break
+        else
+          puts "Invalid move, try again."
+        end
+        rescue
+          puts "Invalid move, try again."
+        end
+      end
+      @turn += 1
+    end
+
     def tutorial
-      puts "Welcome to Chess!"
-      puts "Move by entering board locations."
-      puts "For example, move a pawn by entering D2 D4."
-      puts "Checkmate your opponent to win."
+      puts
+      puts "   Welcome to Chess!"
+      puts "   Move by entering board locations."
+      puts "   For example, move a pawn by entering: D2 D4."
+      puts "   Checkmate your opponent to win."
       puts
     end
 
@@ -44,8 +83,37 @@ module Chess
 
     def valid_move?(from_col, from_row, to_col, to_row)
       curr_piece = piece(from_col, from_row)
-      return false if curr_piece.team == piece(to_col, to_row).team
-
+      puts "checking if current piece exists"
+      return false if curr_piece.nil?
+      puts "checking which pieces may be moved this turn"
+      return false if @turn.even? && curr_piece.team != :W
+      return false if @turn.odd? && curr_piece.team != :B
+      puts "checking for friendly fire"
+      if piece(to_col, to_row)
+        return false if curr_piece.team == piece(to_col, to_row).team
+      end
+      if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
+        puts "checking pawn special conditions"
+        if curr_piece.team == :W && (to_row - from_row == 1)
+          return true if piece(to_col, to_row)
+        elsif curr_piece.team == :B && (from_row - to_row == 1)
+          return true if piece(to_col, to_row)
+        end
+      end
+      puts "checking all possible moves"
+      return false unless curr_piece.poss_moves(from_col, from_row).include?([to_col, to_row])
+      case curr_piece.class
+      when Rook
+        return false unless has_straight_los?(from_col, from_row, to_col, to_row)
+      when Bishop
+        return false unless has_diag_los?(from_col, from_row, to_col, to_row)
+      when Queen
+        if (from_col == to_col) || (from_row == to_row)
+          return false unless has_straight_los?(from_col, from_row, to_col, to_row)
+        else
+          return false unless has_diag_los?(from_col, from_row, to_col, to_row)
+        end
+      end
       true
     end
 
@@ -89,9 +157,7 @@ module Chess
 
     def move(from_col, from_row, to_col, to_row)
       @board[to_col][to_row] = piece(from_col, from_row)
-      if piece(to_col, to_row).is_a?(Pawn)
-        piece(to_col, to_row).moved = true
-      end
+      piece(to_col, to_row).moved = true if piece(to_col, to_row).is_a?(Pawn)
       @board[from_col][from_row] = nil
     end
 
@@ -142,14 +208,23 @@ module Chess
   end
 
 
-  def translate_from(location)
-    board_loc = []
-    COLS.each_with_index do |col, index|
-      board_loc << index if col == location[0]
+  def parse(input)
+    from = nil
+    to = nil
+    if match = input.match(/(^\w\d).*(\w\d$)/i)
+      from, to = match.captures
     end
-    board_loc << location[1].to_i - 1 if location[1].to_i.between?(1, 8)
-    return board_loc if board_loc.size == 2
-    nil
+    return nil if from.nil?
+    [from, to]
+  end
+
+  def translate_from(location)
+    coords = []
+    COLS.each_with_index do |col, index|
+      coords << index if col == location[0]
+    end
+    coords << location[1].to_i - 1
+    coords
   end
 
 end

@@ -4,4 +4,5 @@ require "./board"
 require "./piece"
 
 include Chess
-game = Board.new
+
+Board.new.play
