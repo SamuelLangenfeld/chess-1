@@ -47,6 +47,7 @@ module Chess
     def turn
       draw
       loop do
+        begin
         curr_team = @turn % 2 == 0 ? :W : :B
         break if mated?(curr_team)
         print (curr_team == :W ? "   [WHITE " : "   [BLACK ")
@@ -72,6 +73,9 @@ module Chess
             break
           end
         else
+          puts "   Invalid move, try again."
+        end
+        rescue
           puts "   Invalid move, try again."
         end
       end
