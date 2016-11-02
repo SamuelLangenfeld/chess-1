@@ -5,12 +5,12 @@ This is the final Ruby project from [The Odin Project](http://www.theodinproject
 
 Quick gameplay with a checkmate:
 
-![alt tag](https://github.com/blackwright/chess/tree/master/screenshots/checkmate.jpg)
+<img src="https://github.com/blackwright/chess/tree/master/screenshots/checkmate.jpg">
 
 You cannot move a piece if it puts you in check:
 
-![alt tag](https://github.com/blackwright/chess/tree/master/screenshots/check_cant_move.jpg)
+<img src="https://github.com/blackwright/chess/tree/master/screenshots/check_cant_move.jpg">
 
 When a player is in check:
 
-![alt tag](https://github.com/blackwright/chess/tree/master/screenshots/checked.jpg)
+<img src="https://github.com/blackwright/chess/tree/master/screenshots/checked.jpg">
