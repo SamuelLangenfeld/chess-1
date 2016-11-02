@@ -1,3 +1,5 @@
+require "yaml"
+
 module Chess
   COLS = %w{ A B C D E F G H }
   ROWS = (1..8).to_a.reverse
@@ -28,10 +30,10 @@ module Chess
         set(Bishop.new(:W), col, 0)
         set(Bishop.new(:B), col, 7)
       end
-      set(King.new(:W), 3, 0)
-      set(King.new(:B), 3, 7)
-      set(Queen.new(:W), 4, 0)
-      set(Queen.new(:B), 4, 7)
+      set(King.new(:W), 4, 0)
+      set(King.new(:B), 4, 7)
+      set(Queen.new(:W), 3, 0)
+      set(Queen.new(:B), 3, 7)
     end
 
     def play
@@ -116,11 +118,13 @@ module Chess
       if stalemate?(curr_team)
         @game_over = true
         if scan_for_check(curr_team)
-          victor = curr_team == :W ? "[WHITE]" : "[BLACK]"
+          victor = curr_team == :W ? "[BLACK]" : "[WHITE]"
           puts "   Checkmate! #{victor} wins!"
+          puts
           return true
         else
           puts "   The game has ended in a stalemate."
+          puts
           return true
         end
       end
