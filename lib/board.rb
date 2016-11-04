@@ -203,20 +203,20 @@ module Chess
             0.upto(7) do |to_col|
               0.upto(7) do |to_row|
                 if valid_move?(curr_team, from_col, from_row, to_col, to_row)
-                  stalemate = true
+                  stalemate = false
                   copy = get(to_col, to_row)
                   test_move(from_col, from_row, to_col, to_row)
-                  stalemate = false unless scan_for_check(curr_team)
+                  stalemate = true if scan_for_check(curr_team)
                   revert_test(from_col, from_row, to_col, to_row)
                   set(copy, to_col, to_row)
-                  return false unless stalemate
+                  return true if stalemate
                 end
               end
             end
           end
         end
       end
-      true
+      false
     end
 
     def scan_for_check(curr_team)
@@ -253,11 +253,15 @@ module Chess
       if get(to_col, to_row)
         return false if curr_piece.team == get(to_col, to_row).team
       end
-      if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
-        if curr_team == :W && (to_row - from_row == 1)
-          return true if get(to_col, to_row)
-        elsif curr_team == :B && (from_row - to_row == 1)
-          return true if get(to_col, to_row)
+      if curr_piece.is_a?(Pawn)
+        if (from_col == to_col)
+          return false if get(to_col, to_row)
+        elsif (to_col - from_col).abs == 1
+          if curr_team == :W && (to_row - from_row == 1)
+            return true if get(to_col, to_row)
+          elsif curr_team == :B && (from_row - to_row == 1)
+            return true if get(to_col, to_row)
+          end
         end
       end
       return false unless curr_piece.poss_moves(from_col, from_row).include?([to_col, to_row])
