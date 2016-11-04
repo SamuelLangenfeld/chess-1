@@ -124,7 +124,7 @@ module Chess
     def save_game
       if File.exists?(SAVE_FILE)
         loop do
-          puts "   This will overwrite your previous save. Overwrite? "
+          print "   This will overwrite your previous save. Overwrite? "
           choice = gets.chomp.downcase
           if choice.start_with?("n")
             puts
