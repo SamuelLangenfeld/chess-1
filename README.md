@@ -45,3 +45,7 @@ The game ends if a player cannot move without putting him/herself in check:
 A look at a quick checkmate:
 
 ![Screenshot](screenshots/checkmate.jpg)
+
+Not yet implemented:
+* En passant
+* Castling
