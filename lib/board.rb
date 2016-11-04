@@ -3,6 +3,7 @@ require "yaml"
 module Chess
   COLS = %w{ A B C D E F G H }
   ROWS = (1..8).to_a.reverse
+  SAVE_FILE = "./game.sav"
 
   class Board
     attr_reader :board
@@ -56,6 +57,16 @@ module Chess
         print "]: "
         input = gets.chomp.upcase
         abort if ["EXIT", "QUIT"].include?(input)
+        if input.include?("SAVE")
+          save_game
+          next
+        elsif input.include?("LOAD")
+          load_game
+          next
+        elsif input.include?("HELP")
+          tutorial
+          next
+        end
         move_attempt = parse(input)
         from_coords = translate_from(move_attempt[0])
         to_coords = translate_from(move_attempt[1])
@@ -86,8 +97,12 @@ module Chess
       puts
       puts "   Welcome to Chess!"
       puts "   Move by entering board locations."
-      puts "   For example, move a pawn by entering: D2 D4."
+      puts "   For example, move a pawn by entering: D2 D4"
       puts "   Checkmate your opponent to win."
+      puts
+      puts "   To save or load a game, type 'save' or 'load' at any turn."
+      puts "   Exit the game by typing 'exit'."
+      puts "   To repeat these instructions, type 'help'."
       puts
     end
 
@@ -104,6 +119,51 @@ module Chess
     def delete(col, row)
       return nil if @board[col].nil?
       @board[col][row] = nil
+    end
+
+    def save_game
+      if File.exists?(SAVE_FILE)
+        loop do
+          puts "   This will overwrite your previous save. Overwrite? "
+          choice = gets.chomp.downcase
+          if choice.start_with?("n")
+            puts
+            puts "   [Save cancelled]"
+            puts
+            return
+          elsif choice.start_with?("y")
+            break
+          else
+            puts "   Invalid choice. Enter [y/n]"
+          end
+        end
+      end
+      data = {
+      :turn => @turn,
+      :game_over => @game_over,
+      :board => @board   
+      }
+      File.open(SAVE_FILE, "w") { |file| YAML.dump(data, file) }
+      puts
+      puts "   [Game saved]"
+      puts
+    end
+
+    def load_game
+      if File.exists?(SAVE_FILE)
+        data = YAML.load_file(SAVE_FILE)
+        @turn = data[:turn]
+        @game_over = data[:game_over]
+        @board = data[:board]
+        draw
+        puts
+        puts "   [Game loaded]"
+        puts
+      else
+        puts
+        puts "   [No save file exists]"
+        puts
+      end
     end
 
     def test_move(from_col, from_row, to_col, to_row)
@@ -188,32 +248,24 @@ module Chess
 
     def valid_move?(curr_team, from_col, from_row, to_col, to_row)
       curr_piece = get(from_col, from_row)
-      # puts "checking if current piece exists"
       return false if curr_piece.nil?
-      # puts "checking which pieces may be moved this turn"
       return false unless curr_team == curr_piece.team
-      # puts "checking for friendly fire"
       if get(to_col, to_row)
         return false if curr_piece.team == get(to_col, to_row).team
       end
       if curr_piece.is_a?(Pawn) && (to_col - from_col).abs == 1
-        # puts "checking pawn attack conditions"
         if curr_team == :W && (to_row - from_row == 1)
           return true if get(to_col, to_row)
         elsif curr_team == :B && (from_row - to_row == 1)
           return true if get(to_col, to_row)
         end
       end
-      # puts "checking all possible moves"
       return false unless curr_piece.poss_moves(from_col, from_row).include?([to_col, to_row])
       if curr_piece.is_a?(Rook)
-        # puts "checking for los"
         return false unless has_straight_los?(from_col, from_row, to_col, to_row)
       elsif curr_piece.is_a?(Bishop)
-        # puts "checking for los"
         return false unless has_diag_los?(from_col, from_row, to_col, to_row)
       elsif curr_piece.is_a?(Queen)
-        # puts "checking for los"
         if (from_col == to_col) || (from_row == to_row)
           return false unless has_straight_los?(from_col, from_row, to_col, to_row)
         else
