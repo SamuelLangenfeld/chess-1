@@ -256,6 +256,7 @@ module Chess
       if curr_piece.is_a?(Pawn)
         if (from_col == to_col)
           return false if get(to_col, to_row)
+          return false unless has_straight_los?(from_col, from_row, to_col, to_row)
         elsif (to_col - from_col).abs == 1
           if curr_team == :W && (to_row - from_row == 1)
             return true if get(to_col, to_row)
