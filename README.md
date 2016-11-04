@@ -28,14 +28,20 @@ Pawns have a number of special conditions:
 
 Moves are parsed through regular expression capture. An input is fine as long as it begins and ends with a valid location on the grid (i.e. "d2 d4", "d2 to d4", "D2D4" will all work).
 
+
+
 A status is displayed when a player is in check:
+
 ![Screenshot](screenshots/checked.jpg)
 
 You cannot move a piece if it puts you in check:
+
 ![Screenshot](screenshots/check_cant_move.jpg)
 
 The game ends if a player cannot move without putting him/herself in check:
+
 ![Screenshot](screenshots/stalemate.jpg)
 
 A look at a quick checkmate:
+
 ![Screenshot](screenshots/checkmate.jpg)
