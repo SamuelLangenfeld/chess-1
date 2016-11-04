@@ -14,6 +14,14 @@ module Chess
       @board = Array.new(8) { Array.new(8) }
     end
 
+    def play
+      set_board
+      tutorial
+      until @game_over
+        turn
+      end
+    end
+
     def set_board
       0.upto(7) do |col|
         set(Pawn.new(:W), col, 1)
@@ -37,12 +45,17 @@ module Chess
       set(Queen.new(:B), 3, 7)
     end
 
-    def play
-      set_board
-      tutorial
-      until @game_over
-        turn
-      end
+    def tutorial
+      puts
+      puts "   Welcome to Chess!"
+      puts "   Move by entering board locations."
+      puts "   For example, move a pawn by entering: D2 D4"
+      puts "   Checkmate your opponent to win."
+      puts
+      puts "   To save or load a game, type 'save' or 'load' at any turn."
+      puts "   Exit the game by typing 'exit'."
+      puts "   To repeat these instructions, type 'help'."
+      puts
     end
 
     def turn
@@ -91,19 +104,6 @@ module Chess
         end
       end
       @turn += 1
-    end
-
-    def tutorial
-      puts
-      puts "   Welcome to Chess!"
-      puts "   Move by entering board locations."
-      puts "   For example, move a pawn by entering: D2 D4"
-      puts "   Checkmate your opponent to win."
-      puts
-      puts "   To save or load a game, type 'save' or 'load' at any turn."
-      puts "   Exit the game by typing 'exit'."
-      puts "   To repeat these instructions, type 'help'."
-      puts
     end
 
     def set(piece, col, row)
@@ -209,14 +209,14 @@ module Chess
                   stalemate = true if scan_for_check(curr_team)
                   revert_test(from_col, from_row, to_col, to_row)
                   set(copy, to_col, to_row)
-                  return true if stalemate
+                  return false unless stalemate
                 end
               end
             end
           end
         end
       end
-      false
+      true
     end
 
     def scan_for_check(curr_team)
@@ -409,7 +409,6 @@ module Chess
       puts "       #{COLS.join('      ')}"
     end
   end
-
 
   def parse(input)
     from = nil
